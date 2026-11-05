@@ -1,0 +1,73 @@
+# %% [markdown]
+# # Abdelrahman Elmarsafawy
+# Merging "dft-road-casualty-statistics-casualty-2025" with Guide table lables.
+
+# %%
+import pandas as pd
+
+casualty_url = 'https://raw.githubusercontent.com/abdelrahman390/DEPI-R5-Databases/main/dft-road-casualty-statistics-casualty-2025.csv'
+guide_url = 'https://raw.githubusercontent.com/abdelrahman390/DEPI-R5-Databases/main/dft-road-casualty-statistics-road-safety-open-dataset-data-guide-2025.xlsx'
+
+# Load the Titanic training data
+df = pd.read_csv(casualty_url)
+gdf = pd.read_excel(guide_url)
+
+# Standardize column names
+df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('-', '_')
+gdf.columns = gdf.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('-', '_')
+
+df.head()
+
+# %%
+def add_label_columns(df, gdf, table_name):
+
+    table_guide = gdf[gdf['table'] == table_name]
+
+    for field in table_guide['field_name'].unique():
+
+        if field not in df.columns:
+            continue
+
+        guide = table_guide[
+            table_guide['field_name'] == field
+        ].copy()
+
+        # Remove empty mappings
+        guide = guide.dropna(subset=['code/format', 'label'])
+
+        if guide.empty:
+            continue
+
+        # Build mapping dictionary
+        mapping = dict(zip(
+            guide['code/format'],
+            guide['label']
+        ))
+
+        # Map original values
+        df[f'{field}_label'] = df[field].map(mapping)
+
+    return df
+
+df = add_label_columns(df, gdf, 'casualty')
+# df => is your main Data set.
+# gdf => is the guid data set.
+# 'casualty' is your table name.
+
+# %%
+df.columns
+
+# %%
+# Very simple analysis
+
+Lable_columns_lenght = 0
+for col in df.columns:
+  if(col.split("_")[-1] == "label"):
+    Lable_columns_lenght += 1
+    print(df[col].describe())
+    print(df[col].unique())
+    print("-"*20)
+
+print("Lable_columns_lenght:", Lable_columns_lenght)
+
+
